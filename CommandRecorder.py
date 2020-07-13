@@ -23,6 +23,17 @@ from bpy.types import Panel, UIList, Operator, PropertyGroup
 
 from . import DefineCommon as Common
 
+"""
+読解メモ
+
+コアコンセプトはINFOから操作ログを取得すること
+
+マクロリスト
+    マクロ
+        コマンドリスト
+            コマンド
+
+"""
 
 # ==============================================================
 # 使用クラスの宣言
@@ -73,28 +84,29 @@ def set_list_index(index, value):
 
 
 def get_recent_operations(get_type: str = "") -> List[str]:  # 操作履歴にアクセス
+    """Infoの操作履歴をコピーして、テキスト配列として返す"""
     # remove other Recent Reports
     reports = [
-        bpy.data.texts.remove(t, do_unlink=True)
-        for t in bpy.data.texts
-        if t.name.startswith("Recent Reports")
+        bpy.data.texts.remove(text, do_unlink=True)
+        for text in bpy.data.texts
+        if text.name.startswith("Recent Reports")
     ]
 
     # make a report
-    win = bpy.context.window_manager.windows[0]
-    area = win.screen.areas[0]
-    area_type = area.type
+    window = bpy.context.window_manager.windows[0]
+    area = window.screen.areas[0]
+    original_area_type = area.type
     area.type = "INFO"
 
     override = bpy.context.copy()
-    override["window"] = win
-    override["screen"] = win.screen
-    override["area"] = win.screen.areas[0]
+    override["window"] = window
+    override["screen"] = window.screen
+    override["area"] = window.screen.areas[0]
 
     bpy.ops.info.select_all(override, action="SELECT")
     bpy.ops.info.report_copy(override)
 
-    area.type = area_type
+    area.type = original_area_type
 
     clipboard = bpy.context.window_manager.clipboard
 
@@ -105,18 +117,20 @@ def get_recent_operations(get_type: str = "") -> List[str]:  # 操作履歴に�
     return bpy.data.texts["Recent Reports"].lines  # 操作履歴全ての行
 
 
-def record(index, mode):
+def start_record():
     recent_operations = get_recent_operations()
-    if mode == "Start":
-        CR_PT_List.Bool_Record = 1
-        CommandRecorder_Variables.Temp_Num = len(recent_operations)
-    else:
-        CR_PT_List.Bool_Record = 0
-        for i in range(CommandRecorder_Variables.Temp_Num, len(recent_operations)):
-            TempText = recent_operations[i - 1].body
-            if TempText.count("bpy"):
-                Item = get_list_command(index).add()
-                Item.name = TempText[TempText.find("bpy") :]
+    CR_PT_List.Bool_Record = 1
+    CommandRecorder_Variables.Temp_Num = len(recent_operations)
+
+
+def stop_record(index):
+    recent_operations = get_recent_operations()
+    CR_PT_List.Bool_Record = 0
+    for i in range(CommandRecorder_Variables.Temp_Num, len(recent_operations)):
+        TempText = recent_operations[i - 1].body
+        if TempText.count("bpy"):
+            Item = get_list_command(index).add()
+            Item.name = TempText[TempText.find("bpy") :]
 
 
 temp_json_path = os.path.dirname(__file__) + "/temp.json"
@@ -186,7 +200,7 @@ bpy.app.handlers.undo_post.append(
 )  # add TempLoad to ActionHandler and call ist after undo
 
 
-def add(index):
+def add_macro(index):
     recent_operations = get_recent_operations("Reports_All")
     if index or len(get_list_command(0)) < 250:
         item = get_list_command(index).add()
@@ -202,7 +216,7 @@ def add(index):
         set_list_index(len(get_list_command(index)) - 1, index)
 
 
-def remove(index):
+def remove_macro(index):
     if not index:
         for Num_Loop in range(get_list_index(0) + 1, len(get_list_command(0)) + 1):
             get_list_command(Num_Loop).clear()
@@ -218,7 +232,7 @@ def remove(index):
                 set_list_index(0, index)
 
 
-def move(index, mode):
+def move_macro(index, mode):
     index1 = get_list_index(index)
     if mode == "Up":
         index2 = get_list_index(index) - 1
@@ -273,7 +287,7 @@ def select_command(mode: str):
             )
 
 
-def play(Commands):
+def play_macro(Commands):
     scene = bpy.context.scene
     if (
         scene.CommandRecorder_Variables.Target_Switch == "Once"
@@ -333,13 +347,13 @@ def play(Commands):
                     )
                 )
 
-        for Num_Loop in range(len(Set_Select)):
+        for i in range(len(Set_Select)):
             print(Set_DeSelect)
-            print(Set_Select[Num_Loop])
-            print(Set_Active[Num_Loop])
+            print(Set_Select[i])
+            print(Set_Active[i])
             exec(Set_DeSelect)
-            exec(Set_Select[Num_Loop])
-            exec(Set_Active[Num_Loop])
+            exec(Set_Select[i])
+            exec(Set_Active[i])
             if current_mode == "EDIT_ARMATURE":
                 bpy.ops.object.mode_set(mode="POSE")
                 bpy.ops.object.mode_set(mode="EDIT")
@@ -354,6 +368,11 @@ def clear(index):
     get_list_command(index).clear()
 
 
+
+# ==============================================================
+# Operators
+# -------------------------------------------------------------------------------------------
+
 class CR_OT_Selector(Operator):
     bl_idname = "cr_selector.button"  # 大文字禁止
     bl_label = "Button_Selector"  # メニューに登録される名前
@@ -364,12 +383,12 @@ class CR_OT_Selector(Operator):
         scene = bpy.context.scene
         # 追加
         if self.mode == "Add":
-            add(0)
+            add_macro(0)
             if scene.CommandRecorder_Variables.IgnoreUndo:
                 temp_save(get_list_index(0) + 1)
         # 削除
         elif self.mode == "Remove":
-            remove(0)
+            remove_macro(0)
             if scene.CommandRecorder_Variables.IgnoreUndo:
                 temp_update()
         # 上へ
@@ -413,7 +432,7 @@ class Command_OT_Play(Operator):
 
     def execute(self, context):
         # コマンドを実行
-        play(get_list_command(get_list_index(0) + 1))
+        play_macro(get_list_command(get_list_index(0) + 1))
         return {"FINISHED"}  # UI系の関数の最後には必ず付ける
 
 
@@ -423,7 +442,7 @@ class Command_OT_Add(Operator):
     # bl_options = {'REGISTER', 'UNDO'}#アンドゥ履歴に登録
     def execute(self, context):
         # コマンドを実行
-        add(get_list_index(0) + 1)
+        add_macro(get_list_index(0) + 1)
         if bpy.context.scene.CommandRecorder_Variables.IgnoreUndo:
             temp_update_command(get_list_index(0) + 1)
         bpy.context.area.tag_redraw()
@@ -440,30 +459,30 @@ class CR_OT_Command(Operator):
         scene = bpy.context.scene
         # 録画を開始
         if self.mode == "Record_Start":
-            record(get_list_index(0) + 1, "Start")
+            start_record()
         # 録画を終了
         elif self.mode == "Record_Stop":
-            record(get_list_index(0) + 1, "Stop")
+            stop_record(get_list_index(0) + 1)
             if scene.CommandRecorder_Variables.IgnoreUndo:
                 temp_update_command(get_list_index(0) + 1)
         # 追加
         elif self.mode == "Add":
-            add(get_list_index(0) + 1)
+            add_macro(get_list_index(0) + 1)
             if scene.CommandRecorder_Variables.IgnoreUndo:
                 temp_update_command(get_list_index(0) + 1)
         # 削除
         elif self.mode == "Remove":
-            remove(get_list_index(0) + 1)
+            remove_macro(get_list_index(0) + 1)
             if scene.CommandRecorder_Variables.IgnoreUndo:
                 temp_update_command(get_list_index(0) + 1)
         # 上へ
         elif self.mode == "Up":
-            move(get_list_index(0) + 1, "Up")
+            move_macro(get_list_index(0) + 1, "Up")
             if scene.CommandRecorder_Variables.IgnoreUndo:
                 temp_update_command(get_list_index(0) + 1)
         # 下へ
         elif self.mode == "Down":
-            move(get_list_index(0) + 1, "Down")
+            move_macro(get_list_index(0) + 1, "Down")
             if scene.CommandRecorder_Variables.IgnoreUndo:
                 temp_update_command(get_list_index(0) + 1)
         # リストをクリア
@@ -562,7 +581,7 @@ def instance_to_recorder():
 
 
 def execute_instance(index):
-    play(CommandRecorder_Variables.Instance_Command[index])
+    play_macro(CommandRecorder_Variables.Instance_Command[index])
 
 
 def rename_instance():
@@ -622,10 +641,10 @@ class CR_OT_Instance(Operator):
     def execute(self, context):
         # 追加
         if self.mode == "Add":
-            add(255)
+            add_macro(255)
         # 削除
         elif self.mode == "Remove":
-            remove(255)
+            remove_macro(255)
         # 上へ
         elif self.mode == "Up":
             Up(255)
@@ -674,7 +693,7 @@ def recent_switch(mode: str):
 
 
 # ==============================================================
-# レイアウト
+# Panels
 # -------------------------------------------------------------------------------------------
 # メニュー
 class CR_PT_List(bpy.types.Panel):
@@ -863,6 +882,9 @@ def Num_Instance_Updater(self, context):
     return items
 
 
+# ==============================================================
+# プロパティの宣言
+# -------------------------------------------------------------------------------------------
 class CommandRecorder_Variables(PropertyGroup):  # 何かとプロパティを収納
     Rename: StringProperty()  # CommandRecorder_Variables.name
 
@@ -904,9 +926,6 @@ class CommandRecorder_Variables(PropertyGroup):  # 何かとプロパティを�
     ]
 
 
-# ==============================================================
-# プロパティの宣言
-# -------------------------------------------------------------------------------------------
 def initialize_props():  # プロパティをセットする関数
     bpy.types.Scene.CommandRecorder_Variables = bpy.props.PointerProperty(
         type=CommandRecorder_Variables
