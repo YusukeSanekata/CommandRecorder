@@ -3,6 +3,11 @@
 # -------------------------------------------------------------------------------------------
 import bpy  # Blender内部のデータ構造にアクセスするために必要
 
+from .blender_module_utils import get_bpy_classes, forEach
+from . import operators
+from . import panels
+
+
 from . import CommandRecorder as CommandRecorder
 from . import DefineCommon as Common
 
@@ -54,6 +59,12 @@ classes += CommandRecorder.Class_List
 
 
 def register():
+    forEach(get_bpy_classes(operators), bpy.utils.register_class)
+    # パネルは登録順が重要
+    forEach(panels.classes, bpy.utils.register_class)
+
+
+    #########################################
     for cls in classes:
         bpy.utils.register_class(cls)
     CommandRecorder.initialize_props()
@@ -61,6 +72,10 @@ def register():
 
 
 def unregister():
+    forEach(get_bpy_classes(operators), bpy.utils.unregister_class)
+    forEach(get_bpy_classes(panels), bpy.utils.unregister_class)
+
+    #########################################
     for cls in classes:
         bpy.utils.unregister_class(cls)
     CommandRecorder.Clear_Props()

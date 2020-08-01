@@ -1,48 +1,67 @@
 import bpy
 
-def get_recent_operations():
-    window = bpy.context.window_manager.windows[0]
-
-    override_context = bpy.context.copy()
-    override_context["window"] = window
-    override_context["screen"] = window.screen
-    override_context["area"] = window.screen.areas[0]
-    override_context["area"]["type"] = "INFO"
-
-    bpy.ops.info.select_all(override_context, action="SELECT")
-    bpy.ops.info.report_copy(override_context)
-
-    clipboard = bpy.context.window_manager.clipboard
-
-    return clipboard
+from .utils.report import flush_recent_operations, get_recent_operations
+from .utils.io import add_to_text_data, read_from_text_data
 
 
-"""
-start operation
-  履歴クリアしちゃうのが楽ではあるが
-  現在長を保存しておくのがまぁ無難か
+class TestOpOperator(bpy.types.Operator):
+    bl_idname = "command_recorder.testop"
+    bl_label = "TestOp"
 
-  あるいは特定文字列を埋め込む。
-  Record Started
+    def execute(self, context):
+        recent = get_recent_operations()
+        print("####################")
+        print("recent:" + str(recent))
+        print("####################")
 
-  こっちのがいいのでは？
-
-  保存場所はオペレータでいいかも。
-  シーンとかに保存するとまた開いたときにまずい
-
-end operation
-  操作履歴を取得する。
-  アクティブなテキストに追記する
-
-保存すべきメタデータってなんかある？特になくない？
-
-ボタンの順番は保存しないといけない
-ファイル名でどうこうするのはよくない
-
-commandrecorder_local_data.jsonみたいのを用意してそこにかいていく
-グローバルはstorageにglobal_data.jsonをおく
-グローバル設定はsettigs.jsonを置く？
-さすがにアドオン設定を利用すべき？でもないか…
+        return {"FINISHED"}
 
 
-"""
+def record_command():
+    commands = get_recent_operations()
+    add_to_text_data("test_record", commands)
+
+
+def play_command():
+    commands = read_from_text_data("test_record")
+    exec(commands)
+
+
+class RecordCommandOperator(bpy.types.Operator):
+    bl_idname = "command_recorder_xxrefactoringxx.recordcommand"
+    bl_label = "RecordCommand"
+
+    __state_running = False
+
+    def cls(self):
+        return RecordCommandOperator
+
+    def __start(self, context):
+        self.cls().__state_running = True
+        flush_recent_operations()
+        self.report({"INFO"}, "Record Start")
+
+    def __end(self, context):
+        self.cls().__state_running = False
+        record_command()
+        self.report({"INFO"}, "Record End")
+
+    def invoke(self, context, event):
+        if not self.cls().__state_running:
+            self.__start(context)
+            return {"FINISHED"}
+        else:
+            self.__end(context)
+        return {"FINISHED"}
+
+    def execute(self, context):
+        return {"FINISHED"}
+
+
+class PlayCommandOperator(bpy.types.Operator):
+    bl_idname = "command_recorder_xxrefactoringxx.playcommand"
+    bl_label = "PlayCommand"
+
+    def execute(self, context):
+        play_command()
+        return {"FINISHED"}
