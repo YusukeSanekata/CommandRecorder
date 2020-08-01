@@ -3,7 +3,7 @@ import bpy
 import os
 import json
 
-from ..constants import COMMAND_FILENAME_PREFIX, STORAGE_COMMANDS_DIR
+from ..constants import COMMAND_FILENAME_PREFIX, STORAGE_MACROS_DIR
 
 from typing import Union
 
@@ -38,17 +38,17 @@ def read_from_text_data(name: str):
 
 
 def write_to_storage(name: str, data: str):
-    path = f"{STORAGE_COMMANDS_DIR}/{name}.py"
+    path = f"{STORAGE_MACROS_DIR}/{name}.py"
 
-    if not os.path.exists(STORAGE_COMMANDS_DIR):
-        os.makedirs(STORAGE_COMMANDS_DIR)
+    if not os.path.exists(STORAGE_MACROS_DIR):
+        os.makedirs(STORAGE_MACROS_DIR)
 
     with open(path, "w") as f:
         f.write(data)
 
 
 def read_from_storage(name: str) -> Union[str, None]:
-    path = f"{STORAGE_COMMANDS_DIR}/{name}.py"
+    path = f"{STORAGE_MACROS_DIR}/{name}.py"
 
     if not os.path.exists(path):
         return None

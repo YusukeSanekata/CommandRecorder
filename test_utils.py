@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
         add_to_text_data("test", sample_text)
         text = read_from_text_data("test")
 
-        self.assertEqual(sample_text, text)
+        self.assertEqual(sample_text+"\n", text)
 
     def test_storage(self):
         write_to_storage("test", sample_text)

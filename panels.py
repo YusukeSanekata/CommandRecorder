@@ -46,14 +46,22 @@ class CommandRecorder_MainPanel(CommandRecorderPanel, bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.label(text="MainPanel")
+        # layout.label(text="MainPanel")
 
         pass
 
-
 ###############################################################
 
+class CommandRecorder_GlobalMacroListPanel(CommandRecorderPanel, bpy.types.Panel):
+    bl_label = "develop"
+    bl_parent_id = CommandRecorder_MainPanel.bl_idname
 
+    def draw(self, context):
+        layout = self.layout
+
+
+
+###############################################################
 class CommandRecorder_MiscPanel(CommandRecorderPanel, bpy.types.Panel):
     bl_label = "develop"
     bl_parent_id = CommandRecorder_MainPanel.bl_idname

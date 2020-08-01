@@ -4,7 +4,7 @@ import pathlib
 here_directory = os.path.dirname(__file__)
 
 STORAGE_DIR = here_directory + "/Storage"
-STORAGE_COMMANDS_DIR = f"{STORAGE_DIR}/commands"
+STORAGE_MACROS_DIR = f"{STORAGE_DIR}/macros"
 
 SETTINGS_JSON_PATH = f"{STORAGE_DIR}/settings.json"
 INTERFACE_DATA_JSON_PATH = f"{STORAGE_DIR}/interface_data.json"
