@@ -1,6 +1,16 @@
 import bpy
 
-from .operators import PlayCommandOperator, RecordCommandOperator, TestOpOperator
+from typing import List
+
+from .utils.io import list_global_macro_names, list_local_macro_names
+from .operators import (
+    AddLocalMacroOperator,
+    PlayCommandOperator,
+    RecordCommandOperator, SelectGlobalMacroOperator,
+    SelectLocalMacroOperator,
+    TestOpOperator,
+)
+from .state import state
 
 
 """
@@ -31,6 +41,7 @@ Storageに保存する、グローバルに使用するマクロ。
 
 """
 
+
 class CommandRecorderPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -50,15 +61,88 @@ class CommandRecorder_MainPanel(CommandRecorderPanel, bpy.types.Panel):
 
         pass
 
+
 ###############################################################
 
+
+# type = "global" | "local"
+def layout_macros(layout, type: str, names: List[str], active_index: int):
+    for index, name in enumerate(names):
+        sub_layout = layout.row(align=True)
+
+        col_selection = sub_layout.column(align=True)
+        col_player = sub_layout.column(align=True)
+
+        selection_icon = "RADIOBUT_OFF"
+        if active_index == index:
+            selection_icon = "RADIOBUT_ON"
+
+        if type == "global":
+            select_operator = col_selection.operator(
+                SelectGlobalMacroOperator.bl_idname, text="", icon=selection_icon
+            )
+        else:
+            select_operator = col_selection.operator(
+                SelectLocalMacroOperator.bl_idname, text="", icon=selection_icon
+            )
+
+        select_operator.index = index
+        select_operator.name = name
+
+        operator = col_player.operator(
+            PlayCommandOperator.bl_idname, text=name, icon="PLAY"
+        )
+        operator.type = type
+        operator.name = name
+
+
 class CommandRecorder_GlobalMacroListPanel(CommandRecorderPanel, bpy.types.Panel):
-    bl_label = "develop"
+    bl_label = "Global Macros"
+    bl_parent_id = CommandRecorder_MainPanel.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
+        box = layout.box()
+
+        layout_macros(
+            box, "global", list_global_macro_names(), state["global_macro_active_index"]
+        )
+
+        layout.label(text="ローカルに移動")
+
+
+class CommandRecorder_LocalMacroListPanel(CommandRecorderPanel, bpy.types.Panel):
+    bl_label = "Local Macros"
     bl_parent_id = CommandRecorder_MainPanel.bl_idname
 
     def draw(self, context):
         layout = self.layout
 
+        layout.label(text="グローバルに移動")
+
+        layout = self.layout
+        box = layout.box()
+
+        layout_macros(
+            box, "local", list_local_macro_names(), state["local_macro_active_index"]
+        )
+
+        managing_row = layout.row()
+        managing_row.operator(AddLocalMacroOperator.bl_idname, text="", icon="ADD")
+
+        rec_icon = "REC" if not RecordCommandOperator.state_running else "PAUSE"
+        rec_text = "Rec" if not RecordCommandOperator.state_running else "stop Rec"
+        managing_row.operator(
+            RecordCommandOperator.bl_idname, text=rec_text, icon=rec_icon
+        )
+
+
+class CommandRecorder_LocalMacroEditorPanel(CommandRecorderPanel, bpy.types.Panel):
+    bl_label = "Local Macro Editor"
+    bl_parent_id = CommandRecorder_MainPanel.bl_idname
+
+    def draw(self, context):
+        layout = self.layout
 
 
 ###############################################################
@@ -74,5 +158,11 @@ class CommandRecorder_MiscPanel(CommandRecorderPanel, bpy.types.Panel):
         layout.operator(PlayCommandOperator.bl_idname)
 
 
-classes = [CommandRecorder_MainPanel, CommandRecorder_MiscPanel]
+classes = [
+    CommandRecorder_MainPanel,
+    CommandRecorder_GlobalMacroListPanel,
+    CommandRecorder_LocalMacroListPanel,
+    CommandRecorder_LocalMacroEditorPanel,
+    CommandRecorder_MiscPanel,
+]
 

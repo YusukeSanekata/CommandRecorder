@@ -7,7 +7,6 @@ from .blender_module_utils import get_bpy_classes, forEach
 from . import operators
 from . import panels
 
-
 from . import CommandRecorder as CommandRecorder
 from . import DefineCommon as Common
 
@@ -29,25 +28,8 @@ bl_info = {
 }
 
 
-# ==============================================================
-# レイアウト
-# -------------------------------------------------------------------------------------------
-# メニュー
-class Muthird_UI(bpy.types.Panel):
-    bl_space_type = "VIEW_3D"  # メニューを表示するエリア
-    bl_region_type = "TOOLS"  # メニューを表示するリージョン
-    bl_category = "CommandRecorder"  # メニュータブのヘッダー名
-    bl_label = "Information"  # タイトル
-    # -------------------------------------------------------------------------------------------
-    # bl_context = "objectmode"# パネルを表示するコンテキスト
-    Header_Icon = Common.CustomIcons("BuuLogo32.png", "BUULOGO")
-
-    def draw_header(self, context):
-        self.layout.label(text="", icon_value=self.Header_Icon)
-
-    # メニューの描画処理
-    def draw(self, context):
-        self.layout.label(text="")  # 文字列表示するだけ
+def init():
+    refresh_global_macro_list()
 
 
 # ==============================================================
@@ -63,12 +45,12 @@ def register():
     # パネルは登録順が重要
     forEach(panels.classes, bpy.utils.register_class)
 
-
     #########################################
     for cls in classes:
         bpy.utils.register_class(cls)
     CommandRecorder.initialize_props()
     print("Register")
+    init()
 
 
 def unregister():
