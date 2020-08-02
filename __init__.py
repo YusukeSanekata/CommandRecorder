@@ -27,11 +27,6 @@ bl_info = {
 # ==============================================================
 # blenderへ登録
 # ==============================================================
-classes = []
-# Class_List.insert(0,Muthird_UI)
-classes += CommandRecorder.Class_List
-
-
 def register():
     forEach(get_bpy_classes(operators), bpy.utils.register_class)
     # パネルは登録順が重要
