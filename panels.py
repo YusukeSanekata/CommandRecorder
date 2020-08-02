@@ -52,7 +52,7 @@ Storageに保存する、グローバルに使用するマクロ。
 class CommandRecorderPanel:
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "CommandRecorder_xxrefactoringxx"
+    bl_category = "CommandRecorder"
 
 
 ###############################################################

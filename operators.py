@@ -68,7 +68,7 @@ def play_command(category: str, name: str):
 
 
 class RecordCommandOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.recordcommand"
+    bl_idname = "command_recorder.recordcommand"
     bl_label = "RecordCommand"
 
     state_running = False
@@ -103,7 +103,7 @@ class RecordCommandOperator(bpy.types.Operator):
 
 
 class PlayCommandOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.playcommand"
+    bl_idname = "command_recorder.playcommand"
     bl_label = "PlayCommand"
 
     type = StringProperty(
@@ -124,7 +124,7 @@ class PlayCommandOperator(bpy.types.Operator):
 
 
 class SelectGlobalMacroOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.selectglobalmacro"
+    bl_idname = "command_recorder.selectglobalmacro"
     bl_label = "SelectGlobalMacro"
 
     name = StringProperty(name="Macro Name", description="name of macro", default="",)
@@ -139,7 +139,7 @@ class SelectGlobalMacroOperator(bpy.types.Operator):
 
 
 class RemoveGlobalMacroOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.removeglobalmacro"
+    bl_idname = "command_recorder.removeglobalmacro"
     bl_label = "RemoveGlobalMacro"
 
     @classmethod
@@ -157,7 +157,7 @@ class RemoveGlobalMacroOperator(bpy.types.Operator):
 
 
 class RenameGlobalMacroOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.renameglobalmacro"
+    bl_idname = "command_recorder.renameglobalmacro"
     bl_label = "RenameGlobalMacro"
 
 
@@ -189,7 +189,7 @@ class RenameGlobalMacroOperator(bpy.types.Operator):
 
 
 class MoveMacroToLocalOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.movemacrotolocal"
+    bl_idname = "command_recorder.movemacrotolocal"
     bl_label = "MoveMacroToLocal"
 
     @classmethod
@@ -209,7 +209,7 @@ class MoveMacroToLocalOperator(bpy.types.Operator):
 
 
 class SelectLocalMacroOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.selectlocalmacro"
+    bl_idname = "command_recorder.selectlocalmacro"
     bl_label = "SelectLocalMacro"
 
     name = StringProperty(name="Macro Name", description="name of macro", default="",)
@@ -224,7 +224,7 @@ class SelectLocalMacroOperator(bpy.types.Operator):
 
 
 class AddLocalMacroOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.addlocalmacro"
+    bl_idname = "command_recorder.addlocalmacro"
     bl_label = "AddLocalMacro"
 
     @classmethod
@@ -237,7 +237,7 @@ class AddLocalMacroOperator(bpy.types.Operator):
 
 
 class RemoveLocalMacroOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.remove_local_macro"
+    bl_idname = "command_recorder.remove_local_macro"
     bl_label = "remove_local_macro"
 
     @classmethod
@@ -255,7 +255,7 @@ class RemoveLocalMacroOperator(bpy.types.Operator):
 
 
 class RenameLocalMacroOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.renamelocalmacro"
+    bl_idname = "command_recorder.renamelocalmacro"
     bl_label = "RenameLocalMacro"
 
     name = StringProperty(
@@ -286,7 +286,7 @@ class RenameLocalMacroOperator(bpy.types.Operator):
 
 
 class MoveMacroToGlobalOperator(bpy.types.Operator):
-    bl_idname = "command_recorder_xxrefactoringxx.movemacrotoglobal"
+    bl_idname = "command_recorder.movemacrotoglobal"
     bl_label = "MoveMacroToGlobal"
 
     @classmethod
