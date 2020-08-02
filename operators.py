@@ -2,13 +2,26 @@ import bpy
 from bpy.props import StringProperty, IntProperty
 
 from .utils.report import flush_recent_operations, get_recent_operations
-from .utils.io import (
+from .utils.macro import (
     add_to_local_macro,
     create_local_macro,
+    get_local_macro,
+    list_local_macro_names,
+    move_to_global,
+    move_to_local,
     read_from_global_macro,
     read_from_local_macro,
+    remove_global_macro,
+    remove_local_macro, rename_global_macro,
+    rename_local_macro,
 )
-from .state import state
+from .state import (
+    clear_global_active,
+    clear_local_active,
+    set_global_active,
+    set_local_active,
+    state,
+)
 
 
 class TestOpOperator(bpy.types.Operator):
@@ -65,7 +78,7 @@ class RecordCommandOperator(bpy.types.Operator):
 
     @classmethod
     def poll(cls, self):
-        return state["local_macro_active_name"] is not None
+        return state["local_macro_active_name"] != ""
 
     def __start(self, context):
         self.cls().state_running = True
@@ -111,12 +124,8 @@ class PlayCommandOperator(bpy.types.Operator):
 
 
 class SelectGlobalMacroOperator(bpy.types.Operator):
-    bl_idname = "object.selectglobalmacro"
+    bl_idname = "command_recorder_xxrefactoringxx.selectglobalmacro"
     bl_label = "SelectGlobalMacro"
-
-    index = IntProperty(
-        name="Global Macro Index", description="index of global macro", default=0,
-    )
 
     name = StringProperty(name="Macro Name", description="name of macro", default="",)
 
@@ -125,17 +134,83 @@ class SelectGlobalMacroOperator(bpy.types.Operator):
         return not RecordCommandOperator.state_running
 
     def execute(self, context):
-        state["global_macro_active_index"] = self.index
+        set_global_active(self.name)
+        return {"FINISHED"}
+
+
+class RemoveGlobalMacroOperator(bpy.types.Operator):
+    bl_idname = "command_recorder_xxrefactoringxx.removeglobalmacro"
+    bl_label = "RemoveGlobalMacro"
+
+    @classmethod
+    def poll(cls, context):
+        return state["global_macro_active_name"] != ""
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_confirm(self, event)
+
+    def execute(self, context):
+        name = state["global_macro_active_name"]
+        remove_global_macro(name)
+        return {"FINISHED"}
+
+
+class RenameGlobalMacroOperator(bpy.types.Operator):
+    bl_idname = "command_recorder_xxrefactoringxx.renameglobalmacro"
+    bl_label = "RenameGlobalMacro"
+
+
+    name = StringProperty(
+        name="New Name", description="new name of the macro", default="",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return state["global_macro_active_name"] != ""
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    def execute(self, context):
+        if self.name == "":
+            self.report({"ERROR"}, str(("Empty string is not allowed.")))
+            return {"CANCELLED"}
+
+        if read_from_global_macro(self.name) is not None:
+            self.report({"ERROR"}, str(("Already exists.")))
+            return {"CANCELLED"}
+
+        rename_global_macro(state["global_macro_active_name"], self.name)
+        set_global_active(self.name)
+
+        return {"FINISHED"}
+
+
+class MoveMacroToLocalOperator(bpy.types.Operator):
+    bl_idname = "command_recorder_xxrefactoringxx.movemacrotolocal"
+    bl_label = "MoveMacroToLocal"
+
+    @classmethod
+    def poll(cls, context):
+        return (
+            state["global_macro_active_name"] != ""
+            and read_from_local_macro(state["global_macro_active_name"]) is None
+        )
+
+    def execute(self, context):
+        name = state["global_macro_active_name"]
+        move_to_local(name)
+        clear_global_active()
+        clear_local_active()
+        set_local_active(name)
         return {"FINISHED"}
 
 
 class SelectLocalMacroOperator(bpy.types.Operator):
-    bl_idname = "object.selectlocalmacro"
+    bl_idname = "command_recorder_xxrefactoringxx.selectlocalmacro"
     bl_label = "SelectLocalMacro"
-
-    index = IntProperty(
-        name="Local Macro Index", description="index of global macro", default=0,
-    )
 
     name = StringProperty(name="Macro Name", description="name of macro", default="",)
 
@@ -144,13 +219,12 @@ class SelectLocalMacroOperator(bpy.types.Operator):
         return not RecordCommandOperator.state_running
 
     def execute(self, context):
-        state["local_macro_active_index"] = self.index
-        state["local_macro_active_name"] = self.name
+        set_local_active(self.name)
         return {"FINISHED"}
 
 
 class AddLocalMacroOperator(bpy.types.Operator):
-    bl_idname = "object.addlocalmacro"
+    bl_idname = "command_recorder_xxrefactoringxx.addlocalmacro"
     bl_label = "AddLocalMacro"
 
     @classmethod
@@ -161,3 +235,71 @@ class AddLocalMacroOperator(bpy.types.Operator):
         create_local_macro("NEW MACRO")
         return {"FINISHED"}
 
+
+class RemoveLocalMacroOperator(bpy.types.Operator):
+    bl_idname = "command_recorder_xxrefactoringxx.remove_local_macro"
+    bl_label = "remove_local_macro"
+
+    @classmethod
+    def poll(cls, context):
+        return state["local_macro_active_name"] != ""
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_confirm(self, event)
+
+    def execute(self, context):
+        remove_local_macro(state["local_macro_active_name"])
+        clear_local_active()
+        return {"FINISHED"}
+
+
+class RenameLocalMacroOperator(bpy.types.Operator):
+    bl_idname = "command_recorder_xxrefactoringxx.renamelocalmacro"
+    bl_label = "RenameLocalMacro"
+
+    name = StringProperty(
+        name="New Name", description="new name of the macro", default="",
+    )
+
+    @classmethod
+    def poll(cls, context):
+        return state["local_macro_active_name"] != ""
+
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
+
+    def execute(self, context):
+        if self.name == "":
+            self.report({"ERROR"}, str(("Empty string is not allowed.")))
+            return {"CANCELLED"}
+
+        if read_from_local_macro(self.name) is not None:
+            self.report({"ERROR"}, str(("Already exists.")))
+            return {"CANCELLED"}
+
+        rename_local_macro(state["local_macro_active_name"], self.name)
+        set_local_active(self.name)
+
+        return {"FINISHED"}
+
+
+class MoveMacroToGlobalOperator(bpy.types.Operator):
+    bl_idname = "command_recorder_xxrefactoringxx.movemacrotoglobal"
+    bl_label = "MoveMacroToGlobal"
+
+    @classmethod
+    def poll(cls, context):
+        return (
+            state["local_macro_active_name"] != ""
+            and read_from_global_macro(state["local_macro_active_name"]) is None
+        )
+
+    def execute(self, context):
+        name = state["local_macro_active_name"]
+        move_to_global(name)
+        clear_global_active()
+        clear_local_active()
+        set_global_active(name)
+        return {"FINISHED"}

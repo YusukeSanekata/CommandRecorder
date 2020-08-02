@@ -4,7 +4,7 @@ import os
 import re
 import json
 
-from ..state import state
+from ..state import set_local_active, state
 from ..constants import COMMAND_FILENAME_PREFIX, STORAGE_MACROS_DIR
 
 from typing import Union
@@ -17,9 +17,13 @@ def get_local_macro(name: str):
 
     return None
 
-def create_local_macro(name:str):
+
+def create_local_macro(name: str):
     _name = COMMAND_FILENAME_PREFIX + name
-    return bpy.data.texts.new(_name)
+    macro = bpy.data.texts.new(_name)
+    set_local_active(str(macro.name).replace(COMMAND_FILENAME_PREFIX, ""))
+    return macro
+
 
 def get_or_create_local_macro(name: str):
     macro = get_local_macro(name)
@@ -46,6 +50,16 @@ def read_from_local_macro(name: str):
         texts.append(line.body)
 
     return "\n".join(texts)
+
+
+def remove_local_macro(name: str):
+    macro = get_local_macro(name)
+    bpy.data.texts.remove(macro)
+
+
+def rename_local_macro(old_name: str, new_name: str):
+    macro = get_local_macro(old_name)
+    macro.name = COMMAND_FILENAME_PREFIX + new_name
 
 
 def list_local_macro_names():
@@ -89,6 +103,42 @@ def read_from_global_macro(name: str) -> Union[str, None]:
 
     with open(path) as f:
         return f.read()
+
+
+def remove_global_macro(name: str):
+    path = f"{STORAGE_MACROS_DIR}/{name}.py"
+    os.remove(path)
+    list_global_macro_names(True)
+
+
+def rename_global_macro(old_name: str, new_name: str):
+    path = f"{STORAGE_MACROS_DIR}/{old_name}.py"
+    new_path = f"{STORAGE_MACROS_DIR}/{new_name}.py"
+    os.rename(path, new_path)
+    list_global_macro_names(True)
+
+
+def move_to_global(local_macro_name: str):
+    global_macro_data = read_from_global_macro(local_macro_name)
+    if global_macro_data is not None:
+        raise ValueError("Already exists!")
+
+    data = read_from_local_macro(local_macro_name)
+    if data is not None:
+        write_to_global_macro(local_macro_name, data)
+        remove_local_macro(local_macro_name)
+        list_global_macro_names(True)
+
+
+def move_to_local(global_macro_name: str):
+    local_macro_data = read_from_local_macro(global_macro_name)
+    if local_macro_data is not None:
+        raise ValueError("Already exists!")
+
+    data = read_from_global_macro(global_macro_name)
+    if data is not None:
+        add_to_local_macro(global_macro_name, data)
+        remove_global_macro(global_macro_name)
 
 
 def __save_json(path: str, data: dict):

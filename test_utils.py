@@ -1,5 +1,7 @@
-from .utils.io import (
-    get_or_create_local_macro, list_global_macro_names, list_local_macro_names,
+from .utils.macro import (
+    get_or_create_local_macro,
+    list_global_macro_names,
+    list_local_macro_names,
     read_from_global_macro,
     read_from_local_macro,
     write_to_global_macro,
@@ -42,11 +44,12 @@ class Test(unittest.TestCase):
         get_or_create_local_macro("3")
         get_or_create_local_macro("4")
         local_macro_names = list_local_macro_names()
-        print('local_macro_names:' + str(local_macro_names))
+        print("local_macro_names:" + str(local_macro_names))
 
     def test_list_grobal_macro_names(self):
         global_macro_names = list_global_macro_names()
-        print('global_macro_names:' + str(global_macro_names))
+        print("global_macro_names:" + str(global_macro_names))
+
 
 if __name__ == "__main__":
     unittest.main(argv=[sys.argv[0]])

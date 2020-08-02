@@ -27,11 +27,6 @@ bl_info = {
     "category": "System",  # プラグインのカテゴリ名
 }
 
-
-def init():
-    refresh_global_macro_list()
-
-
 # ==============================================================
 # blenderへ登録
 # ==============================================================
@@ -50,7 +45,6 @@ def register():
         bpy.utils.register_class(cls)
     CommandRecorder.initialize_props()
     print("Register")
-    init()
 
 
 def unregister():
