@@ -1,18 +1,26 @@
 import bpy
 from bpy.props import StringProperty, IntProperty
 
+from .utils.metadata import (
+    create_local_metadata,
+    read_from_global_metadata, read_from_local_metadata,
+    write_to_global_metadata,
+    write_to_local_metadata,
+)
 from .utils.report import flush_recent_operations, get_recent_operations
 from .utils.macro import (
     add_to_local_macro,
     create_local_macro,
     get_local_macro,
+    list_global_macro_names,
     list_local_macro_names,
     move_to_global,
     move_to_local,
     read_from_global_macro,
     read_from_local_macro,
     remove_global_macro,
-    remove_local_macro, rename_global_macro,
+    remove_local_macro,
+    rename_global_macro,
     rename_local_macro,
 )
 from .state import (
@@ -160,7 +168,6 @@ class RenameGlobalMacroOperator(bpy.types.Operator):
     bl_idname = "command_recorder.renameglobalmacro"
     bl_label = "RenameGlobalMacro"
 
-
     name = StringProperty(
         name="New Name", description="new name of the macro", default="",
     )
@@ -205,6 +212,11 @@ class MoveMacroToLocalOperator(bpy.types.Operator):
         clear_global_active()
         clear_local_active()
         set_local_active(name)
+
+        metadata = read_from_local_metadata(name)
+        if metadata is not None:
+            metadata["index"] = len(list_local_macro_names()) - 1
+            write_to_local_metadata(name, metadata)
         return {"FINISHED"}
 
 
@@ -232,7 +244,9 @@ class AddLocalMacroOperator(bpy.types.Operator):
         return not RecordCommandOperator.state_running
 
     def execute(self, context):
-        create_local_macro("NEW MACRO")
+        text_data, name = create_local_macro("NEW MACRO")
+        write_to_local_metadata(name, {"index": len(list_local_macro_names()) - 1})
+
         return {"FINISHED"}
 
 
@@ -302,4 +316,9 @@ class MoveMacroToGlobalOperator(bpy.types.Operator):
         clear_global_active()
         clear_local_active()
         set_global_active(name)
+
+        metadata = read_from_global_metadata(name)
+        if metadata is not None:
+            metadata["index"] = len(list_global_macro_names()) - 1
+            write_to_global_metadata(name, metadata)
         return {"FINISHED"}
