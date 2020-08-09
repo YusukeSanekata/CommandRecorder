@@ -3,19 +3,25 @@ from bpy.props import StringProperty, IntProperty
 
 from .utils.metadata import (
     create_local_metadata,
-    read_from_global_metadata, read_from_local_metadata,
+    read_from_global_metadata,
+    read_from_local_metadata,
+    read_metadata,
     write_to_global_metadata,
     write_to_local_metadata,
 )
 from .utils.report import flush_recent_operations, get_recent_operations
 from .utils.macro import (
+    REGION_GLOBAL,
+    REGION_LOCAL,
     add_to_local_macro,
     create_local_macro,
     get_local_macro,
     list_global_macro_names,
     list_local_macro_names,
+    move,
     move_to_global,
     move_to_local,
+    order_names_with_metadata,
     read_from_global_macro,
     read_from_local_macro,
     remove_global_macro,
@@ -321,4 +327,103 @@ class MoveMacroToGlobalOperator(bpy.types.Operator):
         if metadata is not None:
             metadata["index"] = len(list_global_macro_names()) - 1
             write_to_global_metadata(name, metadata)
+        return {"FINISHED"}
+
+
+class MoveUpLocalMacroOperator(bpy.types.Operator):
+    bl_idname = "command_recorder.moveuplocalmacro"
+    bl_label = "MoveUpLocalMacro"
+
+    @classmethod
+    def poll(cls, context):
+        if state["local_macro_active_name"] == "":
+            return False
+
+        names = list_local_macro_names()
+        index = names.index(state["local_macro_active_name"])
+
+        if index == 0:
+            return False
+
+        return True
+
+    def execute(self, context):
+        move(state["local_macro_active_name"], -1, REGION_LOCAL)
+
+        return {"FINISHED"}
+
+
+class MoveDownLocalMacroOperator(bpy.types.Operator):
+    bl_idname = "command_recorder.movedownlocalmacro"
+    bl_label = "MoveDownLocalMacro"
+
+    @classmethod
+    def poll(cls, context):
+        if state["local_macro_active_name"] == "":
+            return False
+
+        names = list_local_macro_names()
+        index = names.index(state["local_macro_active_name"])
+
+        if index >= len(names) - 1:
+            return False
+
+        return True
+
+    def execute(self, context):
+        move(state["local_macro_active_name"], 1, REGION_LOCAL)
+
+        return {"FINISHED"}
+
+
+class MoveUpGlobalMacroOperatorOperator(bpy.types.Operator):
+    bl_idname = "command_recorder.moveupglobalmacrooperator"
+    bl_label = "MoveUpGlobalMacroOperator"
+
+    @classmethod
+    def poll(cls, context):
+        if state["global_macro_active_name"] == "":
+            return False
+
+        names = list_global_macro_names()
+        print('names:' + str(names))
+        index = names.index(state["global_macro_active_name"])
+
+        if index == 0:
+            return False
+
+        return True
+
+    def execute(self, context):
+        state["global_macro_names"] = None
+        move(state["global_macro_active_name"], -1, REGION_GLOBAL)
+        state["global_macro_names"] = None
+
+        return {"FINISHED"}
+
+
+class MoveDownGlobalMacroOperator(bpy.types.Operator):
+    bl_idname = "command_recorder.movedownglobalmacro"
+    bl_label = "MoveDownGlobalMacro"
+
+    @classmethod
+    def poll(cls, context):
+        if state["global_macro_active_name"] == "":
+            return False
+
+        names = list_global_macro_names()
+        print('names:' + str(names))
+        index = names.index(state["global_macro_active_name"])
+        print('index:' + str(index))
+
+        if index >= len(names) - 1:
+            return False
+
+        return True
+
+    def execute(self, context):
+        state["global_macro_names"] = None
+        move(state["global_macro_active_name"], 1, REGION_GLOBAL)
+        state["global_macro_names"] = None
+
         return {"FINISHED"}

@@ -5,6 +5,7 @@ state = {
     "global_macro_active_name": "",
     "local_macro_active_name":"",
     "global_macro_names": None,
+    "global_metadata_caches":{}
 }
 
 def set_global_active(name:str):
